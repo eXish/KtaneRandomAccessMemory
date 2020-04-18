@@ -12,5 +12,6 @@ MonoBehaviour:
   m_Name: WorkshopItem
   m_EditorClassIdentifier: 
   WorkshopPublishedFileID: 2064208850
-  Title: Random Access Memory (Beta)
-  Tags: []
+  Title: Random Access Memory
+  Tags:
+  - Regular Module
