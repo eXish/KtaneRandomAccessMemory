@@ -30,6 +30,7 @@ public class RAMScript : MonoBehaviour {
     private static int moduleIdCounter = 1;
     private int moduleId = 0;
 	private string[] unitList = new string [6] {"B", "KB", "MB", "GB", "TB", "PB"};
+	private Coroutine RAMactive;
 	// Use this for initialization
 	void Awake () {
 		moduleId = moduleIdCounter++;
@@ -50,10 +51,19 @@ public class RAMScript : MonoBehaviour {
 		UpdateProgressBar();
 		percentageToSolve = Random.Range (40, 60);
 		texts[11].text = string.Empty;
+		ignoredModules = GetComponent<KMBossModule>().GetIgnoredModules("Random Access Memory", new string[]{
+				"Random Access Memory",
+				"14"
+            });		
+		nonIgnored = Bomb.GetSolvableModuleNames().Where(x => !ignoredModules.Contains(x)).Count();
+		//nonIgnored = nonIgnored + 2; Debug.LogFormat("[Random Access Memory #{0}]: Please notify creator because he forgot he added 2 on non-Ignored modules for debugging!", moduleId); //For debugging 
 	}
 	void Start () {
 		//Activates the module
-		StartCoroutine(RAMUsage());
+		StartCoroutine(checkForceSolve());
+		RAMactive = StartCoroutine(RAMUsage());
+		if (RAMactive != null)
+		StopCoroutine(RAMactive);
 		//StartCoroutine(solveDelay()); //Debugging
 	}
 	void UpdateProgressBar()
@@ -102,44 +112,35 @@ public class RAMScript : MonoBehaviour {
        		return false;
 		}	
 	
-		IEnumerator clearAnimation () {
-			inputMode = false;
-			appclearedcount = Random.Range(100 , 150) * ((currentDigit * 100 / limitDigit) - 20) / 100;
-			appclearedtext = appclearedcount + " applications cleared.";
-			buttons[10].material = colours[1];
-			texts[11].text = appclearedtext;
-			resetPercentage = Random.Range (20, 30);
-			currentDigit = resetPercentage * limitDigit / 100;
-			yield return new WaitForSeconds(1.5f);
-			buttons[10].material = colours[2];
-			texts[11].text = string.Empty;
-			inputMode = true;
-			yield return new WaitForSeconds (1f);
-			displayCurrentDigit.text = currentDigit.ToString();
-			UpdateProgressBar();
-		}
-		IEnumerator clearAnimationlite () {
-			inputMode = false;
-			appclearedtext = "0 applications cleared.";
-			buttons[10].material = colours[1];
-			texts[11].text = appclearedtext;
-			yield return new WaitForSeconds(1.5f);
-			buttons[10].material = colours[2];
-			texts[11].text = string.Empty;
-			inputMode = true;
-			yield return new WaitForSeconds (1f);
+	IEnumerator clearAnimation () {
+		inputMode = false;
+		appclearedcount = Random.Range(100 , 150) * ((currentDigit * 100 / limitDigit) - 20) / 100;
+		appclearedtext = appclearedcount + " applications cleared.";
+		buttons[10].material = colours[1];
+		texts[11].text = appclearedtext;
+		resetPercentage = Random.Range (20, 30);
+		currentDigit = resetPercentage * limitDigit / 100;
+		yield return new WaitForSeconds(1.5f);
+		buttons[10].material = colours[2];
+		texts[11].text = string.Empty;
+		inputMode = true;
+		yield return new WaitForSeconds (1f);
+		displayCurrentDigit.text = currentDigit.ToString();
+		UpdateProgressBar();
 	}
-
-	IEnumerator RAMUsage () {
-		nonIgnored = Bomb.GetSolvableModuleNames().Where(x => !ignoredModules.Contains(x)).Count();
-		//nonIgnored = nonIgnored + 2; Debug.LogFormat("[Random Access Memory #{0}]: Please notify creator because he forgot he added 2 on non-Ignored modules for debugging!", moduleId); //For debugging 
-
-		ignoredModules = GetComponent<KMBossModule>().GetIgnoredModules("Random Access Memory", new string[]{
-				"Random Access Memory",
-				"14"
-            });		
+	IEnumerator clearAnimationlite () {
+		inputMode = false;
+		appclearedtext = "0 applications cleared.";
+		buttons[10].material = colours[1];
+		texts[11].text = appclearedtext;
+		yield return new WaitForSeconds(1.5f);
+		buttons[10].material = colours[2];
+		texts[11].text = string.Empty;
+		inputMode = true;
+		yield return new WaitForSeconds (1f);
+	}
+	IEnumerator checkForceSolve () {
 		if (nonIgnored == 0) {
-			StopCoroutine(RAMUsage());
 			yield return new WaitForSeconds(3f);
 			GetComponent<KMBombModule>().HandlePass();
 			Debug.LogFormat("[Random Access Memory #{0}]: There are no non-ignored modules, forcing module to be solved.", moduleId);
@@ -157,10 +158,14 @@ public class RAMScript : MonoBehaviour {
             thing.text = string.Empty;
             }
 		}
-		else if (solvedState == false && safeMode == false)
+		else {StartCoroutine(RAMUsage());};
+	}
+
+	IEnumerator RAMUsage () {
+		if (solvedState == false && safeMode == false)
 		{
 		inputMode = true;
-		increasedDuration = Random.Range (6, 10);
+		increasedDuration = Random.Range (6, 15);
 		for ( int i = 1; i < increasedDuration; i++ ) {
 			yield return new WaitForSeconds(1f);
 		}
@@ -181,7 +186,6 @@ public class RAMScript : MonoBehaviour {
 			else if (currentDigit > limitDigit)
 			{
 				inputMode = false;
-				StopCoroutine(RAMUsage());
 				currentDigit = limitDigit;
 				displayCurrentDigit.text = currentDigit.ToString();
 				UpdateProgressBar();
@@ -197,7 +201,9 @@ public class RAMScript : MonoBehaviour {
 	}
 
 	IEnumerator solveDelay () {
-		yield return new WaitForSeconds (.5f);
+		StopCoroutine(RAMUsage());
+		RAMactive = null;
+		yield return new WaitForSeconds (1f);
 		GetComponent<KMAudio>().PlaySoundAtTransform("4beeps", transform);
 		inputMode = false;
 		buttons[10].material = colours[1];
@@ -220,6 +226,7 @@ public class RAMScript : MonoBehaviour {
 			progressbar.text = bars1;
 			progressbarlimit.text = bars2;
 		}
+		yield return new WaitForSeconds (1.2857f);
 		for ( int i = 1; i <= 70; i++)
 		{
 			yield return new WaitForSeconds(1.2857f);
@@ -249,7 +256,7 @@ public class RAMScript : MonoBehaviour {
     #pragma warning restore 414
     IEnumerator ProcessTwitchCommand(string command)
     {
-			if(command.Equals("clear"))       
+		if (Regex.IsMatch(command, @"^\s*clear\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant) || Regex.IsMatch(command, @"^\s*slap clear now\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))		
 		{
 			yield return null;
 			clear.OnInteract();
