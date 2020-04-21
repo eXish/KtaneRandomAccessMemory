@@ -14,10 +14,8 @@ public class RAMScript : MonoBehaviour {
 	private int nonIgnored;
 	public KMBombInfo Bomb;
 	public TextMesh displayCurrentDigit, displayCurrentUnit, displayLimitDigit, displayLimitUnit, progressbar, progressbarlimit;
-	int increasedDuration;
-	int increasedPercentage;
-	int currentDigit, limitDigit;
-	int unit;
+	int increasedDuration, increasedPercentage;
+	int currentDigit, limitDigit, unit;
 	string currentUnit;
 	int appclearedcount;
 	string appclearedtext;
@@ -30,7 +28,6 @@ public class RAMScript : MonoBehaviour {
     private static int moduleIdCounter = 1;
     private int moduleId = 0;
 	private string[] unitList = new string [6] {"B", "KB", "MB", "GB", "TB", "PB"};
-	private Coroutine RAMactive;
 	// Use this for initialization
 	void Awake () {
 		moduleId = moduleIdCounter++;
@@ -51,19 +48,17 @@ public class RAMScript : MonoBehaviour {
 		UpdateProgressBar();
 		percentageToSolve = Random.Range (40, 60);
 		texts[11].text = string.Empty;
-		ignoredModules = GetComponent<KMBossModule>().GetIgnoredModules("Random Access Memory", new string[]{
-				"Random Access Memory",
-				"14"
-            });		
-		nonIgnored = Bomb.GetSolvableModuleNames().Where(x => !ignoredModules.Contains(x)).Count();
-		//nonIgnored = nonIgnored + 2; Debug.LogFormat("[Random Access Memory #{0}]: Please notify creator because he forgot he added 2 on non-Ignored modules for debugging!", moduleId); //For debugging 
 	}
 	void Start () {
 		//Activates the module
+		ignoredModules = GetComponent<KMBossModule>().GetIgnoredModules("Random Access Memory", new string[]{
+			"Random Access Memory",
+			"14"
+    	});		
+		nonIgnored = Bomb.GetSolvableModuleNames().Where(x => !ignoredModules.Contains(x)).Count();
+		//nonIgnored = nonIgnored + 2; Debug.LogFormat("[Random Access Memory #{0}]: Please notify creator because he forgot he added 2 on non-Ignored modules for debugging!", moduleId); //For debugging 
+
 		StartCoroutine(checkForceSolve());
-		RAMactive = StartCoroutine(RAMUsage());
-		if (RAMactive != null)
-		StopCoroutine(RAMactive);
 		//StartCoroutine(solveDelay()); //Debugging
 	}
 	void UpdateProgressBar()
@@ -202,7 +197,6 @@ public class RAMScript : MonoBehaviour {
 
 	IEnumerator solveDelay () {
 		StopCoroutine(RAMUsage());
-		RAMactive = null;
 		yield return new WaitForSeconds (1f);
 		GetComponent<KMAudio>().PlaySoundAtTransform("4beeps", transform);
 		inputMode = false;
