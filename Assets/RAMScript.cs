@@ -5,26 +5,26 @@ using System.Text.RegularExpressions;
 using System.Linq;
 using KModkit;
 
-public class RAMScript : MonoBehaviour {
+public class RAMScript: MonoBehaviour {
 	public string[] ignoredModules;
+	private int nonIgnoredcount;
 	public Material[] colours;
 	public Renderer[] buttons;
 	public TextMesh[] texts;
 	public KMSelectable clear;
-	private int nonIgnored;
 	public KMBombInfo Bomb;
 	public TextMesh displayCurrentDigit, displayCurrentUnit, displayLimitDigit, displayLimitUnit, progressbar, progressbarlimit;
 	int increasedDuration, increasedPercentage;
-	int currentDigit, limitDigit, unit;
+	int currentDigit, limitDigit, unitNumber;
 	string currentUnit;
-	int appclearedcount;
+	int appclearedcount, clearedcount = 1;
 	string appclearedtext;
-	bool solvedState = false, inputMode = false, safeMode = false;
+	bool solvedState = false, inputMode = false, safeMode = false, properClear;
 	int numofbars1, numofbars2;
 	string bars1, bars2;
 	public Color normal, warning, shutdown, normaltext;
 	int resetPercentage;
-	int percentageToSolve;
+	int solvePercentage;
     private static int moduleIdCounter = 1;
     private int moduleId = 0;
 	private string[] unitList = new string [6] {"B", "KB", "MB", "GB", "TB", "PB"};
@@ -34,8 +34,8 @@ public class RAMScript : MonoBehaviour {
 		//Clear button interact
  		clear.OnInteract += clearRAM;
 		//Picking units
-		unit = Random.Range(0, 6);
-		currentUnit = unitList[unit];
+		unitNumber = Random.Range(0, 6);
+		currentUnit = unitList[unitNumber];
 		//Randomizing RAM Limit
 		limitDigit = Random.Range(100, 1000);
 		//Initial RAM = 40%
@@ -46,34 +46,35 @@ public class RAMScript : MonoBehaviour {
 		displayLimitDigit.text = limitDigit.ToString();
 		displayLimitUnit.text = currentUnit.ToString();
 		UpdateProgressBar();
-		percentageToSolve = Random.Range (40, 60);
+		solvePercentage = Random.Range (40, 80);
 		texts[11].text = string.Empty;
 	}
 	void Start () {
-		//Activates the module
+	//Activates the module
+		//Getting the Ignore List from Boss Module Manager
 		ignoredModules = GetComponent<KMBossModule>().GetIgnoredModules("Random Access Memory", new string[]{
 			"Random Access Memory",
 			"14"
-    	});		
-		nonIgnored = Bomb.GetSolvableModuleNames().Where(x => !ignoredModules.Contains(x)).Count();
-		//nonIgnored = nonIgnored + 2; Debug.LogFormat("[Random Access Memory #{0}]: Please notify creator because he forgot he added 2 on non-Ignored modules for debugging!", moduleId); //For debugging 
-
+    	});
+		//Count for non-ignored modules
+		nonIgnoredcount = Bomb.GetSolvableModuleNames().Where(x => !ignoredModules.Contains(x)).Count();
+		//nonIgnoredcount = nonIgnoredcount + 2; Debug.LogFormat("[Random Access Memory #{0}]: Please notify creator because he forgot he added 2 on non-Ignored modules for debugging!", moduleId); //For debugging 
 		StartCoroutine(checkForceSolve());
 		//StartCoroutine(solveDelay()); //Debugging
 	}
 	void UpdateProgressBar()
 		{
-		//70 Bars
-		numofbars1 = currentDigit * 70 / limitDigit;
-		numofbars2 = (70 - numofbars1);
+		//27 Bars
+		numofbars1 = currentDigit * 27 / limitDigit;
+		numofbars2 = (27 - numofbars1);
 		//Debug.LogFormat("[Random Access Memory #{0}]: Numbers of bars = {1},{2}!", moduleId, numofbars1, numofbars2);
 		for (int i = 1; i <= numofbars1; i++)
 		{
-			bars1 += "|";
+			bars1 += "█";
 		}
 		for (int i = 1; i <= numofbars2; i++)
 		{
-			bars2 += "|";
+			bars2 += "█";
 		}
 		if (currentDigit * 100 / limitDigit >= 70)
 		{
@@ -93,12 +94,12 @@ public class RAMScript : MonoBehaviour {
 		bars2 = "";
 		}
 	private bool clearRAM ()
+	//When the clear button is pressed
 		{
 			if (solvedState == false && inputMode == true && (currentDigit * 100 / limitDigit) >= 30)
 			{	
 			//Debug.LogFormat("[Random Access Memory #{0}]: Clear button has been pressed!", moduleId);
 			StartCoroutine(clearAnimation());
-			
 			}
 			else if (solvedState == false && inputMode == true)
 			{
@@ -109,6 +110,7 @@ public class RAMScript : MonoBehaviour {
 	
 	IEnumerator clearAnimation () {
 		inputMode = false;
+		properClear = true;
 		appclearedcount = Random.Range(100 , 150) * ((currentDigit * 100 / limitDigit) - 20) / 100;
 		appclearedtext = appclearedcount + " applications cleared.";
 		buttons[10].material = colours[1];
@@ -121,10 +123,12 @@ public class RAMScript : MonoBehaviour {
 		inputMode = true;
 		yield return new WaitForSeconds (1f);
 		displayCurrentDigit.text = currentDigit.ToString();
+		clearedcount += 1;
 		UpdateProgressBar();
 	}
 	IEnumerator clearAnimationlite () {
 		inputMode = false;
+		properClear = false;
 		appclearedtext = "0 applications cleared.";
 		buttons[10].material = colours[1];
 		texts[11].text = appclearedtext;
@@ -135,7 +139,7 @@ public class RAMScript : MonoBehaviour {
 		yield return new WaitForSeconds (1f);
 	}
 	IEnumerator checkForceSolve () {
-		if (nonIgnored == 0) {
+		if (nonIgnoredcount == 0) {
 			yield return new WaitForSeconds(3f);
 			GetComponent<KMBombModule>().HandlePass();
 			Debug.LogFormat("[Random Access Memory #{0}]: There are no non-ignored modules, forcing module to be solved.", moduleId);
@@ -173,9 +177,11 @@ public class RAMScript : MonoBehaviour {
 		}
 	}
 	IEnumerator checkSolveStrike () {
-			if ( Bomb.GetSolvedModuleNames().Count() * 100 / nonIgnored >= percentageToSolve)
+			if ( (Bomb.GetSolvedModuleNames().Count() * 100 / nonIgnoredcount) > solvePercentage)
 			{
+				yield return new WaitForSeconds (2f);
 				safeMode = true;
+				StopAllCoroutines();
 				StartCoroutine(solveDelay());
 			}
 			else if (currentDigit > limitDigit)
@@ -196,36 +202,37 @@ public class RAMScript : MonoBehaviour {
 	}
 
 	IEnumerator solveDelay () {
-		StopCoroutine(RAMUsage());
-		yield return new WaitForSeconds (1f);
+		yield return new WaitForSeconds (2f);
+		currentDigit = 0;
 		GetComponent<KMAudio>().PlaySoundAtTransform("4beeps", transform);
 		inputMode = false;
 		buttons[10].material = colours[1];
 		Debug.LogFormat("[Random Access Memory #{0}]: Initiated safe mode!", moduleId);
+		yield return new WaitForSeconds (0.1f);
 		progressbar.color = shutdown;
 		bars1 = "";
-		bars2 = "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||";
-		numofbars1 = 69;
-		numofbars2 = 69;
+		bars2 = "███████████████████████████";
+		numofbars1 = 26;
+		numofbars2 = 26;
 		progressbar.text = bars1;
 		progressbarlimit.text = bars2;
 		displayCurrentDigit.text = "---";
 		displayLimitDigit.text = "---";
-		for ( int i = 1; i <= 70; i++)
+		for ( int i = 1; i <= 27; i++)
 		{
-			yield return new WaitForSeconds(.1005f);
-			bars1 += "|";
+			yield return new WaitForSeconds(0.261f);
+			bars1 += "█";
 			bars2 = bars2.Remove(numofbars2);
 			numofbars2--;
 			progressbar.text = bars1;
 			progressbarlimit.text = bars2;
 		}
 		yield return new WaitForSeconds (1.2857f);
-		for ( int i = 1; i <= 70; i++)
+		for ( int i = 1; i <= 27; i++)
 		{
-			yield return new WaitForSeconds(1.2857f);
+			yield return new WaitForSeconds(3.333f);
 			bars1 = bars1.Remove(numofbars1);
-			bars2 += "|";
+			bars2 += "█";
 			numofbars1--;
 			progressbar.text = bars1;
 			progressbarlimit.text = bars2;
@@ -254,6 +261,9 @@ public class RAMScript : MonoBehaviour {
 		{
 			yield return null;
 			clear.OnInteract();
+			if (properClear == true) {
+			yield return "sendtochat You have cleared for " + clearedcount + " times.";
+			}
 			yield break;
         }
     }
