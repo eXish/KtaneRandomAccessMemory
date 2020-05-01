@@ -17,9 +17,9 @@ public class RAMScript: MonoBehaviour {
 	int increasedDuration, increasedPercentage;
 	int currentDigit, limitDigit, unitNumber;
 	string currentUnit;
-	int appclearedcount, clearedcount = 1;
+	int appclearedcount;
 	string appclearedtext;
-	bool solvedState = false, inputMode = false, safeMode = false, properClear;
+	bool solvedState = false, inputMode = false, safeMode = false;
 	int numofbars1, numofbars2;
 	string bars1, bars2;
 	public Color normal, warning, shutdown, normaltext;
@@ -38,7 +38,7 @@ public class RAMScript: MonoBehaviour {
 		currentUnit = unitList[unitNumber];
 		//Randomizing RAM Limit
 		limitDigit = Random.Range(100, 1000);
-		//Initial RAM = 40%
+		//Initial RAM = 25%
 		currentDigit = limitDigit / 4;
 		//Display all of them on the module
 		displayCurrentDigit.text = currentDigit.ToString();
@@ -58,7 +58,7 @@ public class RAMScript: MonoBehaviour {
     	});
 		//Count for non-ignored modules
 		nonIgnoredcount = Bomb.GetSolvableModuleNames().Where(x => !ignoredModules.Contains(x)).Count();
-		//nonIgnoredcount = nonIgnoredcount + 2; Debug.LogFormat("[Random Access Memory #{0}]: Please notify creator because he forgot he added 2 on non-Ignored modules for debugging!", moduleId); //For debugging 
+		nonIgnoredcount = nonIgnoredcount + 2; Debug.LogFormat("[Random Access Memory #{0}]: Please notify creator because he forgot he added 2 on non-Ignored modules for debugging!", moduleId); //For debugging 
 		StartCoroutine(checkForceSolve());
 		//StartCoroutine(solveDelay()); //Debugging
 	}
@@ -98,19 +98,18 @@ public class RAMScript: MonoBehaviour {
 		{
 			if (solvedState == false && inputMode == true && (currentDigit * 100 / limitDigit) >= 30)
 			{	
-			//Debug.LogFormat("[Random Access Memory #{0}]: Clear button has been pressed!", moduleId);
-			StartCoroutine(clearAnimation());
+			    //Debug.LogFormat("[Random Access Memory #{0}]: Clear button has been pressed!", moduleId);
+			    StartCoroutine(clearAnimation());
 			}
 			else if (solvedState == false && inputMode == true)
 			{
-			StartCoroutine(clearAnimationlite());
+			    StartCoroutine(clearAnimationlite());
 			}
        		return false;
 		}	
 	
 	IEnumerator clearAnimation () {
 		inputMode = false;
-		properClear = true;
 		appclearedcount = Random.Range(100 , 150) * ((currentDigit * 100 / limitDigit) - 20) / 100;
 		appclearedtext = appclearedcount + " applications cleared.";
 		buttons[10].material = colours[1];
@@ -123,12 +122,10 @@ public class RAMScript: MonoBehaviour {
 		inputMode = true;
 		yield return new WaitForSeconds (1f);
 		displayCurrentDigit.text = currentDigit.ToString();
-		clearedcount += 1;
 		UpdateProgressBar();
 	}
 	IEnumerator clearAnimationlite () {
 		inputMode = false;
-		properClear = false;
 		appclearedtext = "0 applications cleared.";
 		buttons[10].material = colours[1];
 		texts[11].text = appclearedtext;
@@ -163,17 +160,17 @@ public class RAMScript: MonoBehaviour {
 	IEnumerator RAMUsage () {
 		if (solvedState == false && safeMode == false)
 		{
-		inputMode = true;
-		increasedDuration = Random.Range (6, 15);
-		for ( int i = 1; i < increasedDuration; i++ ) {
-			yield return new WaitForSeconds(1f);
-		}
-		increasedPercentage = Random.Range (5, 12);
-		currentDigit = currentDigit + (increasedPercentage * limitDigit / 100); 
-		//Debug.LogFormat("[Random Access Memory #{0}]: Increased Percentage = {2}%, Current RAM Amount is {1}", moduleId, currentDigit, increasedPercentage);			
-		displayCurrentDigit.text = currentDigit.ToString();
-		UpdateProgressBar();
-		StartCoroutine(checkSolveStrike());
+		    inputMode = true;
+		    increasedDuration = Random.Range (6, 15);
+		    for ( int i = 1; i < increasedDuration; i++ ) {
+			    yield return new WaitForSeconds(1f);
+		    }
+		    increasedPercentage = Random.Range (5, 12);
+		    currentDigit = currentDigit + (increasedPercentage * limitDigit / 100); 
+		    //Debug.LogFormat("[Random Access Memory #{0}]: Increased Percentage = {2}%, Current RAM Amount is {1}", moduleId, currentDigit, increasedPercentage);			
+		    displayCurrentDigit.text = currentDigit.ToString();
+		    UpdateProgressBar();
+		    StartCoroutine(checkSolveStrike());
 		}
 	}
 	IEnumerator checkSolveStrike () {
@@ -244,11 +241,11 @@ public class RAMScript: MonoBehaviour {
 			solvedState = true;
 			foreach(Renderer b in buttons)
        		{
-            b.material = colours[0];
+                b.material = colours[0];
 			}
 			foreach (TextMesh thing in texts)
          	{
-            thing.text = string.Empty;
+                thing.text = string.Empty;
             }
 	}
 
@@ -261,10 +258,23 @@ public class RAMScript: MonoBehaviour {
 		{
 			yield return null;
 			clear.OnInteract();
-			if (properClear == true) {
-			yield return "sendtochat You have cleared for " + clearedcount + " times.";
-			}
 			yield break;
         }
+    }
+
+    void TwitchHandleForcedSolve()
+    {
+        StartCoroutine(HandleSolve());
+    }
+
+    IEnumerator HandleSolve()
+    {
+        while (!safeMode)
+        {
+            while ((currentDigit * 100 / limitDigit) < 30) { yield return new WaitForSeconds(0.1f); }
+            clear.OnInteract();
+            yield return new WaitForSeconds(0.001f);
+        }
+        while (!solvedState) { yield return new WaitForSeconds(0.1f); }
     }
  }

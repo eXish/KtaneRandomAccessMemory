@@ -651,7 +651,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1355031422435064}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.3, y: -50.6, z: -0.123}
+  m_LocalPosition: {x: -0.3, y: -50.6, z: -0.122}
   m_LocalScale: {x: 1, y: 0.7, z: 1}
   m_Children:
   - {fileID: 4471139435820622}
@@ -1802,7 +1802,6 @@ MonoBehaviour:
   displayLimitUnit: {fileID: 102303099773514632}
   progressbar: {fileID: 102910528322199516}
   progressbarlimit: {fileID: 102978840927250138}
-  description: {fileID: 102583074812016670}
   normal: {r: 0, g: 1, b: 0, a: 1}
   warning: {r: 1, g: 0.335, b: 0.335, a: 1}
   shutdown: {r: 1, g: 0.6413793, b: 0, a: 1}
